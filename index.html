@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>연습생 핫클립 채점지 (LIVE)</title>
+    <title>연습생 핫클립 채점지</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -25,7 +25,7 @@
 
 <div class="container">
     <div class="header">
-        <h2>🎬 연습생 핫클립 채점지 (LIVE)</h2>
+        <h2>🎬 연습생 핫클립 채점지</h2>
         <div class="btn-group">
             <button class="btn-reset" onclick="forceReset()">⚠️ 19명 명단 강제 복구</button>
             <button class="btn-add" onclick="addNextWeek()">+ 다음 주차 추가</button>
@@ -40,7 +40,7 @@
 </div>
 
 <script>
-    // 1. Firebase 설정 (복사해주신 키 적용)
+    // 1. Firebase 설정
     const firebaseConfig = {
         apiKey: "AIzaSyDnfjiMOibQiTMwSBhKPJ7nMo8sALjDrzQ",
         authDomain: "hotclip-checker.firebaseapp.com",
@@ -55,7 +55,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // 2. 19명 전체 데이터 및 초기 점수
+    // 2. 초기 데이터 (19명 전원)
     const initialFullData = {
         "밤베": ["1 PASS", "미제출"], "융로로": ["미제출", "2 PASS"], "찌로": ["1 PASS / 1 FAIL", "미제출"],
         "프하": ["1 FAIL", "미제출"], "호발": ["2 PASS", "1 PASS"], "공도리": ["미제출", "미제출"],
@@ -67,22 +67,19 @@
 
     const nameList = Object.keys(initialFullData);
 
-    // [강제 복구 함수] 서버 내용을 무시하고 19명으로 재세팅
     function forceReset() {
         if(confirm("서버 데이터를 지우고 19명 명단으로 다시 세팅할까요?")) {
             db.ref('traineeData').set(initialFullData)
-                .then(() => alert("19명 명단 복구 완료!"));
+                .then(() => alert("복구 완료!"));
         }
     }
 
-    // 초기 실행 시 데이터 체크
     db.ref('traineeData').once('value', snapshot => {
         if (!snapshot.exists()) {
             db.ref('traineeData').set(initialFullData);
         }
     });
 
-    // 실시간 데이터 감시 및 화면 업데이트
     db.ref('traineeData').on('value', snapshot => {
         const data = snapshot.val();
         if (data) renderTable(data);
@@ -114,10 +111,8 @@
         });
     }
 
-    // [스타일 함수] 연분홍색 조건 추가됨
     function applyStyle(val) {
         const v = val.toUpperCase();
-        // PASS와 FAIL이 섞여 있으면 연분홍 배경
         if (v.includes("PASS") && v.includes("FAIL")) {
             return 'style="background-color: #ffe4e1; color: #ff6b81; font-weight:bold; border-radius:4px;"';
         }
