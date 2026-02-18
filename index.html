@@ -7,17 +7,17 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
         body { font-family: 'Pretendard', -apple-system, sans-serif; padding: 20px; background-color: #f0f2f5; color: #1c1e21; }
-        .container { max-width: 1300px; margin: 0 auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); }
+        .container { max-width: 1400px; margin: 0 auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         h2 { color: #1a73e8; margin: 0; font-size: 24px; }
         .btn-group { display: flex; gap: 10px; }
         .table-wrapper { overflow-x: auto; border-radius: 10px; border: 1px solid #dee2e6; }
-        table { border-collapse: collapse; width: 100%; min-width: 900px; }
-        th, td { border: 1px solid #ececec; padding: 15px; text-align: center; }
+        table { border-collapse: collapse; width: 100%; min-width: 1000px; }
+        th, td { border: 1px solid #ececec; padding: 12px; text-align: center; }
         th { background-color: #f8f9fa; color: #495057; font-weight: 700; position: sticky; top: 0; }
-        .name-col { background-color: #ffffff; font-weight: bold; position: sticky; left: 0; z-index: 10; border-right: 2px solid #dee2e6; min-width: 100px; }
-        .btn-add { background: linear-gradient(135deg, #6e8efb, #a777e3); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .btn-reset { background: #ff4757; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .name-col { background-color: #ffffff; font-weight: bold; position: sticky; left: 0; z-index: 10; border-right: 2px solid #dee2e6; width: 120px; }
+        .btn-add { background: linear-gradient(135deg, #6e8efb, #a777e3); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .btn-reset { background: #ff4757; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
         input[type="text"] { width: 90%; border: 1px solid #eee; text-align: center; padding: 8px; border-radius: 4px; font-size: 14px; background: transparent; }
     </style>
 </head>
@@ -40,6 +40,7 @@
 </div>
 
 <script>
+    // 1. Firebase 설정 (복사해주신 키 적용)
     const firebaseConfig = {
         apiKey: "AIzaSyDnfjiMOibQiTMwSBhKPJ7nMo8sALjDrzQ",
         authDomain: "hotclip-checker.firebaseapp.com",
@@ -54,7 +55,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // 19명 전체 명단 데이터 (1, 2주차 내용 포함)
+    // 2. 19명 전체 데이터 및 초기 점수
     const initialFullData = {
         "밤베": ["1 PASS", "미제출"], "융로로": ["미제출", "2 PASS"], "찌로": ["1 PASS / 1 FAIL", "미제출"],
         "프하": ["1 FAIL", "미제출"], "호발": ["2 PASS", "1 PASS"], "공도리": ["미제출", "미제출"],
@@ -64,9 +65,9 @@
         "유리에": ["1 FAIL", "미제출"], "윤세람": ["미제출", "미제출"], "지오": ["1 FAIL", "1 FAIL"], "햄쩌구": ["1 PASS", "2 PASS"]
     };
 
-    const initialNames = Object.keys(initialFullData);
+    const nameList = Object.keys(initialFullData);
 
-    // [강제 복구 버튼 기능] 서버를 싹 지우고 19명을 다시 넣음
+    // [강제 복구 함수] 서버 내용을 무시하고 19명으로 재세팅
     function forceReset() {
         if(confirm("서버 데이터를 지우고 19명 명단으로 다시 세팅할까요?")) {
             db.ref('traineeData').set(initialFullData)
@@ -74,16 +75,14 @@
         }
     }
 
-    // 초기 데이터 세팅 (데이터가 아예 없을 때만)
-    function checkFirstTime() {
-        db.ref('traineeData').once('value', snapshot => {
-            if (!snapshot.exists()) {
-                db.ref('traineeData').set(initialFullData);
-            }
-        });
-    }
+    // 초기 실행 시 데이터 체크
+    db.ref('traineeData').once('value', snapshot => {
+        if (!snapshot.exists()) {
+            db.ref('traineeData').set(initialFullData);
+        }
+    });
 
-    // 실시간 데이터 동기화
+    // 실시간 데이터 감시 및 화면 업데이트
     db.ref('traineeData').on('value', snapshot => {
         const data = snapshot.val();
         if (data) renderTable(data);
@@ -103,7 +102,7 @@
         }
 
         tbody.innerHTML = '';
-        initialNames.forEach(name => {
+        nameList.forEach(name => {
             const row = document.createElement('tr');
             let cells = `<td class="name-col">${name}</td>`;
             const scores = data[name] || [];
@@ -115,12 +114,17 @@
         });
     }
 
+    // [스타일 함수] 연분홍색 조건 추가됨
     function applyStyle(val) {
         const v = val.toUpperCase();
+        // PASS와 FAIL이 섞여 있으면 연분홍 배경
+        if (v.includes("PASS") && v.includes("FAIL")) {
+            return 'style="background-color: #ffe4e1; color: #ff6b81; font-weight:bold; border-radius:4px;"';
+        }
         if (v.includes("PASS")) return 'style="color:#2ecc71; font-weight:bold;"';
         if (v.includes("FAIL")) return 'style="color:#e74c3c; font-weight:bold;"';
-        if (v.includes("미제출")) return 'style="color:#adb5bd; font-weight:bold;"';
-        return 'style="color:#1c1e21; font-weight:bold;"';
+        if (v.includes("미제출")) return 'style="color:#adb5bd;"';
+        return 'style="color:#1c1e21;"';
     }
 
     function updateFirebase(name, index, value) {
@@ -130,14 +134,13 @@
     function addNextWeek() {
         db.ref('traineeData').once('value', snapshot => {
             const data = snapshot.val();
-            for (let name in data) {
+            nameList.forEach(name => {
+                if(!data[name]) data[name] = [];
                 data[name].push("");
-            }
+            });
             db.ref('traineeData').set(data);
         });
     }
-
-    checkFirstTime();
 </script>
 </body>
 </html>
