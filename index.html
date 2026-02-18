@@ -16,17 +16,11 @@
         
         .name-col { background-color: #ffffff; font-weight: bold; position: sticky; left: 0; z-index: 10; border-right: 2px solid #dee2e6; min-width: 100px; }
         
-        .pass { color: #2ecc71; font-weight: bold; }
-        .fail { color: #e74c3c; font-weight: bold; }
-        .none { color: #adb5bd; }
-
         .btn-group { display: flex; gap: 10px; }
-        .btn-add { background: linear-gradient(135deg, #6e8efb, #a777e3); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: transform 0.2s; }
-        .btn-add:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(110, 142, 251, 0.4); }
+        .btn-add { background: linear-gradient(135deg, #6e8efb, #a777e3); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; }
         .btn-reset { background: #ff4757; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; }
         
-        input[type="text"] { width: 90%; border: 1px solid #eee; text-align: center; padding: 8px; border-radius: 4px; font-size: 14px; }
-        input[type="text"]:focus { outline: 2px solid #6e8efb; border-color: transparent; }
+        input[type="text"] { width: 90%; border: 1px solid #eee; text-align: center; padding: 8px; border-radius: 4px; font-size: 14px; background: transparent; }
     </style>
 </head>
 <body>
@@ -53,7 +47,7 @@
 </div>
 
 <script>
-    // 기본 초기 데이터
+    // 초기 기본 데이터 (2월 1, 2주차)
     const initialParticipants = [
         { name: "밤베", scores: ["1 PASS", "미제출"] },
         { name: "융로로", scores: ["미제출", "2 PASS"] },
@@ -76,7 +70,6 @@
         { name: "햄쩌구", scores: ["1 PASS", "2 PASS"] }
     ];
 
-    // 로컬 스토리지에서 데이터 불러오기 또는 초기화
     let savedData = JSON.parse(localStorage.getItem('hotclipData')) || initialParticipants;
 
     function applyStyle(val) {
@@ -90,32 +83,31 @@
     function initTable() {
         const header = document.getElementById('headerRow');
         const tbody = document.getElementById('tableBody');
-        const weekCount = savedData[0].scores.length;
+        const totalWeeks = savedData[0].scores.length;
 
-        // 헤더 렌더링
+        // 헤더 생성 (2월 X주차 형식)
         header.innerHTML = '<th class="name-col">이름</th>';
-        for (let i = 1; i <= weekCount; i++) {
+        for (let i = 1; i <= totalWeeks; i++) {
             const th = document.createElement('th');
-            th.innerText = `${i}주차`;
+            th.innerText = `2월 ${i}주차`;
             header.appendChild(th);
         }
 
-        // 바디 렌더링
+        // 데이터 행 생성
         tbody.innerHTML = '';
-        savedData.forEach((p, pIndex) => {
+        savedData.forEach((p, pIdx) => {
             const row = document.createElement('tr');
             let cells = `<td class="name-col">${p.name}</td>`;
-            p.scores.forEach((score, sIndex) => {
-                cells += `<td><input type="text" value="${score}" ${applyStyle(score)} oninput="saveValue(${pIndex}, ${sIndex}, this)"></td>`;
+            p.scores.forEach((score, sIdx) => {
+                cells += `<td><input type="text" value="${score}" ${applyStyle(score)} oninput="saveValue(${pIdx}, ${sIdx}, this)"></td>`;
             });
             row.innerHTML = cells;
             tbody.appendChild(row);
         });
     }
 
-    // 값 변경 시 저장
-    function saveValue(pIndex, sIndex, el) {
-        savedData[pIndex].scores[sIndex] = el.value;
+    function saveValue(pIdx, sIdx, el) {
+        savedData[pIdx].scores[sIdx] = el.value;
         const v = el.value.toUpperCase();
         if (v.includes("PASS")) el.style.color = "#2ecc71";
         else if (v.includes("FAIL")) el.style.color = "#e74c3c";
@@ -126,16 +118,14 @@
         localStorage.setItem('hotclipData', JSON.stringify(savedData));
     }
 
-    // 주차 추가
     function addNextWeek() {
         savedData.forEach(p => p.scores.push(""));
         localStorage.setItem('hotclipData', JSON.stringify(savedData));
         initTable();
     }
 
-    // 데이터 초기화
     function resetData() {
-        if (confirm("모든 데이터를 초기 상태로 되돌릴까요? (추가된 주차와 입력값이 삭제됩니다)")) {
+        if (confirm("모든 데이터를 초기 상태(2월 2주차까지)로 되돌릴까요?")) {
             localStorage.removeItem('hotclipData');
             location.reload();
         }
