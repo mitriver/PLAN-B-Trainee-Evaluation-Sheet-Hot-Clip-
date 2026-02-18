@@ -2,24 +2,22 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>연습생 핫클립 채점지</title>
+    <title>연습생 핫클립 채점지 (LIVE)</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
         body { font-family: 'Pretendard', -apple-system, sans-serif; padding: 20px; background-color: #f0f2f5; color: #1c1e21; }
         .container { max-width: 1300px; margin: 0 auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         h2 { color: #1a73e8; margin: 0; font-size: 24px; }
-        
+        .btn-group { display: flex; gap: 10px; }
         .table-wrapper { overflow-x: auto; border-radius: 10px; border: 1px solid #dee2e6; }
         table { border-collapse: collapse; width: 100%; min-width: 900px; }
         th, td { border: 1px solid #ececec; padding: 15px; text-align: center; }
         th { background-color: #f8f9fa; color: #495057; font-weight: 700; position: sticky; top: 0; }
-        
         .name-col { background-color: #ffffff; font-weight: bold; position: sticky; left: 0; z-index: 10; border-right: 2px solid #dee2e6; min-width: 100px; }
-        
-        .btn-group { display: flex; gap: 10px; }
         .btn-add { background: linear-gradient(135deg, #6e8efb, #a777e3); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; }
         .btn-reset { background: #ff4757; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        
         input[type="text"] { width: 90%; border: 1px solid #eee; text-align: center; padding: 8px; border-radius: 4px; font-size: 14px; background: transparent; }
     </style>
 </head>
@@ -27,50 +25,95 @@
 
 <div class="container">
     <div class="header">
-        <h2>🎬 연습생 핫클립 채점지</h2>
+        <h2>🎬 연습생 핫클립 채점지 (LIVE)</h2>
         <div class="btn-group">
-            <button class="btn-reset" onclick="resetData()">초기화</button>
+            <button class="btn-reset" onclick="forceReset()">⚠️ 19명 명단 강제 복구</button>
             <button class="btn-add" onclick="addNextWeek()">+ 다음 주차 추가</button>
         </div>
     </div>
-
     <div class="table-wrapper">
         <table id="scoreTable">
-            <thead>
-                <tr id="headerRow">
-                    <th class="name-col">이름</th>
-                </tr>
-            </thead>
+            <thead><tr id="headerRow"><th class="name-col">이름</th></tr></thead>
             <tbody id="tableBody"></tbody>
         </table>
     </div>
 </div>
 
 <script>
-    // 초기 기본 데이터 (2월 1, 2주차)
-    const initialParticipants = [
-        { name: "밤베", scores: ["1 PASS", "미제출"] },
-        { name: "융로로", scores: ["미제출", "2 PASS"] },
-        { name: "찌로", scores: ["1 PASS / 1 FAIL", "미제출"] },
-        { name: "프하", scores: ["1 FAIL", "미제출"] },
-        { name: "호발", scores: ["2 PASS", "1 PASS"] },
-        { name: "공도리", scores: ["미제출", "미제출"] },
-        { name: "한세현", scores: ["2 FAIL", "1 PASS / 1 FAIL"] },
-        { name: "김솜냐", scores: ["1 FAIL", "1 FAIL"] },
-        { name: "도페", scores: ["2 PASS", "2 PASS"] },
-        { name: "룬나", scores: ["1 PASS", "미제출"] },
-        { name: "리퍼석", scores: ["1 PASS / 1 FAIL", "1 PASS / 1 FAIL"] },
-        { name: "마리히", scores: ["2 FAIL", "2 FAIL"] },
-        { name: "밤문", scores: ["2 PASS", "미제출"] },
-        { name: "백소라", scores: ["2 PASS", "2 PASS"] },
-        { name: "요나카", scores: ["2 PASS", "2 PASS"] },
-        { name: "유리에", scores: ["1 FAIL", "미제출"] },
-        { name: "윤세람", scores: ["미제출", "미제출"] },
-        { name: "지오", scores: ["1 FAIL", "1 FAIL"] },
-        { name: "햄쩌구", scores: ["1 PASS", "2 PASS"] }
-    ];
+    const firebaseConfig = {
+        apiKey: "AIzaSyDnfjiMOibQiTMwSBhKPJ7nMo8sALjDrzQ",
+        authDomain: "hotclip-checker.firebaseapp.com",
+        projectId: "hotclip-checker",
+        storageBucket: "hotclip-checker.firebasestorage.app",
+        messagingSenderId: "267152120477",
+        appId: "1:267152120477:web:edda4bf32b52dc20ddd274",
+        measurementId: "G-SZQYFGBX3J",
+        databaseURL: "https://hotclip-checker-default-rtdb.firebaseio.com"
+    };
 
-    let savedData = JSON.parse(localStorage.getItem('hotclipData')) || initialParticipants;
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // 19명 전체 명단 데이터 (1, 2주차 내용 포함)
+    const initialFullData = {
+        "밤베": ["1 PASS", "미제출"], "융로로": ["미제출", "2 PASS"], "찌로": ["1 PASS / 1 FAIL", "미제출"],
+        "프하": ["1 FAIL", "미제출"], "호발": ["2 PASS", "1 PASS"], "공도리": ["미제출", "미제출"],
+        "한세현": ["2 FAIL", "1 PASS / 1 FAIL"], "김솜냐": ["1 FAIL", "1 FAIL"], "도페": ["2 PASS", "2 PASS"],
+        "룬나": ["1 PASS", "미제출"], "리퍼석": ["1 PASS / 1 FAIL", "1 PASS / 1 FAIL"], "마리히": ["2 FAIL", "2 FAIL"],
+        "밤문": ["2 PASS", "미제출"], "백소라": ["2 PASS", "2 PASS"], "요나카": ["2 PASS", "2 PASS"],
+        "유리에": ["1 FAIL", "미제출"], "윤세람": ["미제출", "미제출"], "지오": ["1 FAIL", "1 FAIL"], "햄쩌구": ["1 PASS", "2 PASS"]
+    };
+
+    const initialNames = Object.keys(initialFullData);
+
+    // [강제 복구 버튼 기능] 서버를 싹 지우고 19명을 다시 넣음
+    function forceReset() {
+        if(confirm("서버 데이터를 지우고 19명 명단으로 다시 세팅할까요?")) {
+            db.ref('traineeData').set(initialFullData)
+                .then(() => alert("19명 명단 복구 완료!"));
+        }
+    }
+
+    // 초기 데이터 세팅 (데이터가 아예 없을 때만)
+    function checkFirstTime() {
+        db.ref('traineeData').once('value', snapshot => {
+            if (!snapshot.exists()) {
+                db.ref('traineeData').set(initialFullData);
+            }
+        });
+    }
+
+    // 실시간 데이터 동기화
+    db.ref('traineeData').on('value', snapshot => {
+        const data = snapshot.val();
+        if (data) renderTable(data);
+    });
+
+    function renderTable(data) {
+        const header = document.getElementById('headerRow');
+        const tbody = document.getElementById('tableBody');
+        const firstPerson = Object.keys(data)[0];
+        const weekCount = data[firstPerson].length;
+
+        header.innerHTML = '<th class="name-col">이름</th>';
+        for (let i = 1; i <= weekCount; i++) {
+            const th = document.createElement('th');
+            th.innerText = `2월 ${i}주차`;
+            header.appendChild(th);
+        }
+
+        tbody.innerHTML = '';
+        initialNames.forEach(name => {
+            const row = document.createElement('tr');
+            let cells = `<td class="name-col">${name}</td>`;
+            const scores = data[name] || [];
+            scores.forEach((score, sIdx) => {
+                cells += `<td><input type="text" value="${score}" ${applyStyle(score)} onchange="updateFirebase('${name}', ${sIdx}, this.value)"></td>`;
+            });
+            row.innerHTML = cells;
+            tbody.appendChild(row);
+        });
+    }
 
     function applyStyle(val) {
         const v = val.toUpperCase();
@@ -80,59 +123,21 @@
         return 'style="color:#1c1e21; font-weight:bold;"';
     }
 
-    function initTable() {
-        const header = document.getElementById('headerRow');
-        const tbody = document.getElementById('tableBody');
-        const totalWeeks = savedData[0].scores.length;
-
-        // 헤더 생성 (2월 X주차 형식)
-        header.innerHTML = '<th class="name-col">이름</th>';
-        for (let i = 1; i <= totalWeeks; i++) {
-            const th = document.createElement('th');
-            th.innerText = `2월 ${i}주차`;
-            header.appendChild(th);
-        }
-
-        // 데이터 행 생성
-        tbody.innerHTML = '';
-        savedData.forEach((p, pIdx) => {
-            const row = document.createElement('tr');
-            let cells = `<td class="name-col">${p.name}</td>`;
-            p.scores.forEach((score, sIdx) => {
-                cells += `<td><input type="text" value="${score}" ${applyStyle(score)} oninput="saveValue(${pIdx}, ${sIdx}, this)"></td>`;
-            });
-            row.innerHTML = cells;
-            tbody.appendChild(row);
-        });
-    }
-
-    function saveValue(pIdx, sIdx, el) {
-        savedData[pIdx].scores[sIdx] = el.value;
-        const v = el.value.toUpperCase();
-        if (v.includes("PASS")) el.style.color = "#2ecc71";
-        else if (v.includes("FAIL")) el.style.color = "#e74c3c";
-        else if (v.includes("미제출")) el.style.color = "#adb5bd";
-        else el.style.color = "#1c1e21";
-        el.style.fontWeight = "bold";
-        
-        localStorage.setItem('hotclipData', JSON.stringify(savedData));
+    function updateFirebase(name, index, value) {
+        db.ref(`traineeData/${name}/${index}`).set(value);
     }
 
     function addNextWeek() {
-        savedData.forEach(p => p.scores.push(""));
-        localStorage.setItem('hotclipData', JSON.stringify(savedData));
-        initTable();
+        db.ref('traineeData').once('value', snapshot => {
+            const data = snapshot.val();
+            for (let name in data) {
+                data[name].push("");
+            }
+            db.ref('traineeData').set(data);
+        });
     }
 
-    function resetData() {
-        if (confirm("모든 데이터를 초기 상태(2월 2주차까지)로 되돌릴까요?")) {
-            localStorage.removeItem('hotclipData');
-            location.reload();
-        }
-    }
-
-    initTable();
+    checkFirstTime();
 </script>
-
 </body>
 </html>
