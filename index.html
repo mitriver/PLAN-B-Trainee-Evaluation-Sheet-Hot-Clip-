@@ -18,7 +18,7 @@
         .name-col { background-color: #ffffff; font-weight: bold; position: sticky; left: 0; z-index: 10; border-right: 2px solid #dee2e6; width: 120px; }
         .btn-add { background: linear-gradient(135deg, #6e8efb, #a777e3); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
         .btn-reset { background: #ff4757; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        input[type="text"] { width: 90%; border: 1px solid #eee; text-align: center; padding: 8px; border-radius: 4px; font-size: 14px; background: transparent; }
+        input[type="text"] { width: 90%; border: 1px solid #eee; text-align: center; padding: 8px; border-radius: 4px; font-size: 14px; background: transparent; outline: none; }
     </style>
 </head>
 <body>
@@ -33,14 +33,13 @@
     </div>
     <div class="table-wrapper">
         <table id="scoreTable">
-            <thead><tr id="headerRow"><th class="name-col">이름</th></tr></thead>
+            <thead><tr id="headerRow"><th class="name-col">닉네임</th></tr></thead>
             <tbody id="tableBody"></tbody>
         </table>
     </div>
 </div>
 
 <script>
-    // 1. Firebase 설정
     const firebaseConfig = {
         apiKey: "AIzaSyDnfjiMOibQiTMwSBhKPJ7nMo8sALjDrzQ",
         authDomain: "hotclip-checker.firebaseapp.com",
@@ -55,7 +54,6 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // 2. 초기 데이터 (19명 전원)
     const initialFullData = {
         "밤베": ["1 PASS", "미제출"], "융로로": ["미제출", "2 PASS"], "찌로": ["1 PASS / 1 FAIL", "미제출"],
         "프하": ["1 FAIL", "미제출"], "호발": ["2 PASS", "1 PASS"], "공도리": ["미제출", "미제출"],
@@ -69,16 +67,9 @@
 
     function forceReset() {
         if(confirm("서버 데이터를 지우고 19명 명단으로 다시 세팅할까요?")) {
-            db.ref('traineeData').set(initialFullData)
-                .then(() => alert("복구 완료!"));
+            db.ref('traineeData').set(initialFullData).then(() => alert("복구 완료!"));
         }
     }
-
-    db.ref('traineeData').once('value', snapshot => {
-        if (!snapshot.exists()) {
-            db.ref('traineeData').set(initialFullData);
-        }
-    });
 
     db.ref('traineeData').on('value', snapshot => {
         const data = snapshot.val();
@@ -91,7 +82,7 @@
         const firstPerson = Object.keys(data)[0];
         const weekCount = data[firstPerson].length;
 
-        header.innerHTML = '<th class="name-col">이름</th>';
+        header.innerHTML = '<th class="name-col">닉네임</th>';
         for (let i = 1; i <= weekCount; i++) {
             const th = document.createElement('th');
             th.innerText = `2월 ${i}주차`;
@@ -114,7 +105,7 @@
     function applyStyle(val) {
         const v = val.toUpperCase();
         if (v.includes("PASS") && v.includes("FAIL")) {
-            return 'style="background-color: #ffe4e1; color: #ff6b81; font-weight:bold; border-radius:4px;"';
+            return 'style="color: #FF82AB; font-weight:bold;"';
         }
         if (v.includes("PASS")) return 'style="color:#2ecc71; font-weight:bold;"';
         if (v.includes("FAIL")) return 'style="color:#e74c3c; font-weight:bold;"';
