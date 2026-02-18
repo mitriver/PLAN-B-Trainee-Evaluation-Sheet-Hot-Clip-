@@ -14,16 +14,16 @@
         th, td { border: 1px solid #ececec; padding: 15px; text-align: center; }
         th { background-color: #f8f9fa; color: #495057; font-weight: 700; position: sticky; top: 0; }
         
-        /* 이름 열 고정 */
         .name-col { background-color: #ffffff; font-weight: bold; position: sticky; left: 0; z-index: 10; border-right: 2px solid #dee2e6; min-width: 100px; }
         
-        /* 점수 스타일 */
         .pass { color: #2ecc71; font-weight: bold; }
         .fail { color: #e74c3c; font-weight: bold; }
         .none { color: #adb5bd; }
 
+        .btn-group { display: flex; gap: 10px; }
         .btn-add { background: linear-gradient(135deg, #6e8efb, #a777e3); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: transform 0.2s; }
         .btn-add:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(110, 142, 251, 0.4); }
+        .btn-reset { background: #ff4757; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; }
         
         input[type="text"] { width: 90%; border: 1px solid #eee; text-align: center; padding: 8px; border-radius: 4px; font-size: 14px; }
         input[type="text"]:focus { outline: 2px solid #6e8efb; border-color: transparent; }
@@ -34,7 +34,10 @@
 <div class="container">
     <div class="header">
         <h2>🎬 연습생 핫클립 채점지</h2>
-        <button class="btn-add" onclick="addNextWeek()">+ 다음 주차 추가</button>
+        <div class="btn-group">
+            <button class="btn-reset" onclick="resetData()">초기화</button>
+            <button class="btn-add" onclick="addNextWeek()">+ 다음 주차 추가</button>
+        </div>
     </div>
 
     <div class="table-wrapper">
@@ -42,92 +45,103 @@
             <thead>
                 <tr id="headerRow">
                     <th class="name-col">이름</th>
-                    <th>1주차</th>
-                    <th>2주차</th>
                 </tr>
             </thead>
-            <tbody id="tableBody">
-                </tbody>
+            <tbody id="tableBody"></tbody>
         </table>
     </div>
 </div>
 
 <script>
-    // 19명 전체 명단 및 기존 데이터 (이미지 기반)
-    const participants = [
-        { name: "밤베", w1: "1 PASS", w2: "미제출" },
-        { name: "융로로", w1: "미제출", w2: "2 PASS" },
-        { name: "찌로", w1: "1 PASS / 1 FAIL", w2: "미제출" },
-        { name: "프하", w1: "1 FAIL", w2: "미제출" },
-        { name: "호발", w1: "2 PASS", w2: "1 PASS" },
-        { name: "공도리", w1: "미제출", w2: "미제출" },
-        { name: "한세현", w1: "2 FAIL", w2: "1 PASS / 1 FAIL" },
-        { name: "김솜냐", w1: "1 FAIL", w2: "1 FAIL" },
-        { name: "도페", w1: "2 PASS", w2: "2 PASS" },
-        { name: "룬나", w1: "1 PASS", w2: "미제출" },
-        { name: "리퍼석", w1: "1 PASS / 1 FAIL", w2: "1 PASS / 1 FAIL" },
-        { name: "마리히", w1: "2 FAIL", w2: "2 FAIL" },
-        { name: "밤문", w1: "2 PASS", w2: "미제출" },
-        { name: "백소라", w1: "2 PASS", w2: "2 PASS" },
-        { name: "요나카", w1: "2 PASS", w2: "2 PASS" },
-        { name: "유리에", w1: "1 FAIL", w2: "미제출" },
-        { name: "윤세람", w1: "미제출", w2: "미제출" },
-        { name: "지오", w1: "1 FAIL", w2: "1 FAIL" },
-        { name: "햄쩌구", w1: "1 PASS", w2: "2 PASS" }
+    // 기본 초기 데이터
+    const initialParticipants = [
+        { name: "밤베", scores: ["1 PASS", "미제출"] },
+        { name: "융로로", scores: ["미제출", "2 PASS"] },
+        { name: "찌로", scores: ["1 PASS / 1 FAIL", "미제출"] },
+        { name: "프하", scores: ["1 FAIL", "미제출"] },
+        { name: "호발", scores: ["2 PASS", "1 PASS"] },
+        { name: "공도리", scores: ["미제출", "미제출"] },
+        { name: "한세현", scores: ["2 FAIL", "1 PASS / 1 FAIL"] },
+        { name: "김솜냐", scores: ["1 FAIL", "1 FAIL"] },
+        { name: "도페", scores: ["2 PASS", "2 PASS"] },
+        { name: "룬나", scores: ["1 PASS", "미제출"] },
+        { name: "리퍼석", scores: ["1 PASS / 1 FAIL", "1 PASS / 1 FAIL"] },
+        { name: "마리히", scores: ["2 FAIL", "2 FAIL"] },
+        { name: "밤문", scores: ["2 PASS", "미제출"] },
+        { name: "백소라", scores: ["2 PASS", "2 PASS"] },
+        { name: "요나카", scores: ["2 PASS", "2 PASS"] },
+        { name: "유리에", scores: ["1 FAIL", "미제출"] },
+        { name: "윤세람", scores: ["미제출", "미제출"] },
+        { name: "지오", scores: ["1 FAIL", "1 FAIL"] },
+        { name: "햄쩌구", scores: ["1 PASS", "2 PASS"] }
     ];
 
-    let weekNum = 2;
+    // 로컬 스토리지에서 데이터 불러오기 또는 초기화
+    let savedData = JSON.parse(localStorage.getItem('hotclipData')) || initialParticipants;
 
-    // 텍스트 색상 및 포맷 적용
-    function format(val) {
-        if (val === "미제출") return `<span class="none">미제출</span>`;
-        return val.replace(/PASS/g, '<span class="pass">PASS</span>')
-                  .replace(/FAIL/g, '<span class="fail">FAIL</span>');
+    function applyStyle(val) {
+        const v = val.toUpperCase();
+        if (v.includes("PASS")) return 'style="color:#2ecc71; font-weight:bold;"';
+        if (v.includes("FAIL")) return 'style="color:#e74c3c; font-weight:bold;"';
+        if (v.includes("미제출")) return 'style="color:#adb5bd; font-weight:bold;"';
+        return 'style="color:#1c1e21; font-weight:bold;"';
     }
 
-    // 테이블 초기화
-    function init() {
+    function initTable() {
+        const header = document.getElementById('headerRow');
         const tbody = document.getElementById('tableBody');
-        participants.forEach(p => {
+        const weekCount = savedData[0].scores.length;
+
+        // 헤더 렌더링
+        header.innerHTML = '<th class="name-col">이름</th>';
+        for (let i = 1; i <= weekCount; i++) {
+            const th = document.createElement('th');
+            th.innerText = `${i}주차`;
+            header.appendChild(th);
+        }
+
+        // 바디 렌더링
+        tbody.innerHTML = '';
+        savedData.forEach((p, pIndex) => {
             const row = document.createElement('tr');
-            row.innerHTML = `
-                <td class="name-col">${p.name}</td>
-                <td>${format(p.w1)}</td>
-                <td>${format(p.w2)}</td>
-            `;
+            let cells = `<td class="name-col">${p.name}</td>`;
+            p.scores.forEach((score, sIndex) => {
+                cells += `<td><input type="text" value="${score}" ${applyStyle(score)} oninput="saveValue(${pIndex}, ${sIndex}, this)"></td>`;
+            });
+            row.innerHTML = cells;
             tbody.appendChild(row);
         });
     }
 
-    // 주차 추가 (옆으로 추가)
-    function addNextWeek() {
-        weekNum++;
-        const header = document.getElementById('headerRow');
-        const newTh = document.createElement('th');
-        newTh.innerText = `${weekNum}주차`;
-        header.appendChild(newTh);
-
-        const rows = document.querySelectorAll('#tableBody tr');
-        rows.forEach(row => {
-            const td = document.createElement('td');
-            const input = document.createElement('input');
-            input.type = "text";
-            input.placeholder = "PASS/FAIL 입력";
-            // 입력 시 실시간 색상 적용 로직
-            input.addEventListener('input', function() {
-                const v = this.value.toUpperCase();
-                if(v.includes("PASS")) this.style.color = "#2ecc71";
-                else if(v.includes("FAIL")) this.style.color = "#e74c3c";
-                else if(v.includes("미제출")) this.style.color = "#adb5bd";
-                else this.style.color = "#1c1e21";
-                this.style.fontWeight = "bold";
-            });
-            td.appendChild(input);
-            row.appendChild(td);
-        });
+    // 값 변경 시 저장
+    function saveValue(pIndex, sIndex, el) {
+        savedData[pIndex].scores[sIndex] = el.value;
+        const v = el.value.toUpperCase();
+        if (v.includes("PASS")) el.style.color = "#2ecc71";
+        else if (v.includes("FAIL")) el.style.color = "#e74c3c";
+        else if (v.includes("미제출")) el.style.color = "#adb5bd";
+        else el.style.color = "#1c1e21";
+        el.style.fontWeight = "bold";
+        
+        localStorage.setItem('hotclipData', JSON.stringify(savedData));
     }
 
-    init();
+    // 주차 추가
+    function addNextWeek() {
+        savedData.forEach(p => p.scores.push(""));
+        localStorage.setItem('hotclipData', JSON.stringify(savedData));
+        initTable();
+    }
+
+    // 데이터 초기화
+    function resetData() {
+        if (confirm("모든 데이터를 초기 상태로 되돌릴까요? (추가된 주차와 입력값이 삭제됩니다)")) {
+            localStorage.removeItem('hotclipData');
+            location.reload();
+        }
+    }
+
+    initTable();
 </script>
 
 </body>
