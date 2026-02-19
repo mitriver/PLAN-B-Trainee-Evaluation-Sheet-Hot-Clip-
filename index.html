@@ -76,6 +76,19 @@
         if (data) renderTable(data);
     });
 
+    // 핵심: 월/주차 계산 로직
+    function getWeekLabel(index) {
+        const startMonth = 2; // 시작 월
+        const monthAdd = Math.floor(index / 4); // 4주가 지나면 +1월
+        let targetMonth = startMonth + monthAdd;
+        
+        // 12월 넘어가면 1월로 리셋
+        if (targetMonth > 12) targetMonth = ((targetMonth - 1) % 12) + 1;
+        
+        const weekNum = (index % 4) + 1; // 1, 2, 3, 4주 반복
+        return `${targetMonth}월 ${weekNum}주차`;
+    }
+
     function renderTable(data) {
         const header = document.getElementById('headerRow');
         const tbody = document.getElementById('tableBody');
@@ -83,9 +96,9 @@
         const weekCount = data[firstPerson].length;
 
         header.innerHTML = '<th class="name-col">닉네임</th>';
-        for (let i = 1; i <= weekCount; i++) {
+        for (let i = 0; i < weekCount; i++) {
             const th = document.createElement('th');
-            th.innerText = `2월 ${i}주차`;
+            th.innerText = getWeekLabel(i); // 여기서 주차 리셋 로직 적용
             header.appendChild(th);
         }
 
