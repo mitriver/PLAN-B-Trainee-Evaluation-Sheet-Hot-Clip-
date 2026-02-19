@@ -6,46 +6,82 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
-        body { font-family: 'Pretendard', -apple-system, sans-serif; padding: 20px; background-color: #f0f2f5; color: #1c1e21; }
-        .container { max-width: 95%; margin: 0 auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        h2 { color: #1a73e8; margin: 0; font-size: 24px; }
+        /* 기본 레이아웃 */
+        html, body { height: 100%; margin: 0; padding: 0; background-color: #f0f2f5; }
+        body { font-family: 'Pretendard', -apple-system, sans-serif; display: flex; flex-direction: column; align-items: center; }
+
+        /* 컨테이너: 너비 98%로 확장, 높이는 화면에 맞춤 */
+        .container { 
+            width: 98%; 
+            height: 100vh; 
+            background: white; 
+            display: flex; 
+            flex-direction: column; 
+            box-shadow: 0 0 25px rgba(0,0,0,0.15);
+        }
+
+        .header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 25px 30px; border-bottom: 3px solid #eee;
+        }
+        h2 { color: #1a73e8; margin: 0; font-size: 32px; letter-spacing: -1px; } /* 제목 대폭 확대 */
         
-        .tabs { display: flex; gap: 5px; margin-bottom: 15px; border-bottom: 2px solid #dee2e6; padding-bottom: 10px; }
-        .tab { padding: 10px 20px; cursor: pointer; border-radius: 8px 8px 0 0; background: #f8f9fa; border: 1px solid #dee2e6; font-weight: bold; color: #666; }
-        .tab.active { background: #1a73e8; color: white; border-color: #1a73e8; }
+        /* 탭 영역 확대 */
+        .tabs { display: flex; gap: 10px; padding: 0 30px; background: #fff; border-bottom: 2px solid #dee2e6; }
+        .tab { 
+            padding: 15px 35px; cursor: pointer; background: #f8f9fa; border: 2px solid #dee2e6; 
+            border-bottom: none; border-radius: 10px 10px 0 0; font-weight: 800; color: #555; font-size: 18px; margin-top: 15px;
+            transition: all 0.2s;
+        }
+        .tab.active { background: #1a73e8; color: white; border-color: #1a73e8; transform: translateY(-2px); }
         
-        .btn-group { display: flex; gap: 10px; }
-        .table-wrapper { overflow-x: auto; border-radius: 10px; border: 1px solid #dee2e6; max-height: 750px; }
-        table { border-collapse: collapse; width: 100%; min-width: 1000px; }
-        th, td { border: 1px solid #ececec; padding: 12px; text-align: center; }
-        th { background-color: #f8f9fa; color: #495057; font-weight: 700; position: sticky; top: 0; z-index: 20; }
+        .btn-group { display: flex; gap: 15px; }
+        .btn-add { background: linear-gradient(135deg, #6e8efb, #a777e3); color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-size: 18px; font-weight: bold; box-shadow: 0 4px 10px rgba(110, 142, 251, 0.3); }
+        .btn-reset { background: #ff4757; color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-size: 18px; font-weight: bold; }
+
+        /* 테이블 영역: 상하 스크롤 허용 */
+        .table-wrapper { 
+            flex: 1; 
+            overflow: auto; 
+            background: #fff;
+        }
+        table { border-collapse: collapse; width: 100%; min-width: 1000px; table-layout: fixed; }
         
-        .name-col { background-color: #ffffff !important; font-weight: bold; position: sticky; left: 0; z-index: 30; border-right: 1px solid #dee2e6; width: 100px; }
-        .count-col { background-color: #fdfdfd !important; font-weight: bold; position: sticky; left: 100px; z-index: 30; border-right: 2px solid #dee2e6; width: 80px; color: #1a73e8; }
+        /* 셀 높이와 폰트 크기 대폭 확대 */
+        th, td { border: 1px solid #ddd; padding: 0; text-align: center; height: 75px; font-size: 20px; } /* 높이 75px로 증가 */
+        th { background-color: #f8f9fa; color: #333; position: sticky; top: 0; z-index: 20; height: 80px; font-size: 20px; border-bottom: 3px solid #dee2e6; }
         
-        .btn-add { background: linear-gradient(135deg, #6e8efb, #a777e3); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .btn-reset { background: #ff4757; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        input[type="text"] { width: 90%; border: 1px solid #eee; text-align: center; padding: 8px; border-radius: 4px; font-size: 14px; background: transparent; outline: none; }
-        .week-col { min-width: 150px; }
+        /* 고정 컬럼 설정 */
+        .name-col { background-color: #ffffff !important; font-weight: 900; position: sticky; left: 0; z-index: 30; border-right: 3px solid #dee2e6; width: 140px; color: #000; }
+        .count-col { background-color: #fcfcfc !important; font-weight: bold; position: sticky; left: 140px; z-index: 30; border-right: 3px solid #dee2e6; width: 90px; color: #1a73e8; }
+        
+        /* 입력창 디자인: 텍스트 강조 */
+        input[type="text"] { 
+            width: 100%; height: 100%; border: none; text-align: center; 
+            font-size: 20px; font-weight: 800; background: transparent; outline: none; box-sizing: border-box;
+            transition: background 0.2s;
+        }
+        input[type="text"]:focus { background: #f0f7ff; border: 3px inset #1a73e8; }
+        
+        .week-col { width: 180px; } /* 주차 칸 너비 확대 */
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
-        <h2 id="mainTitle">🎬 연습생 핫클립 채점지</h2>
+        <h2 onclick="location.reload()" style="cursor:pointer">🎬 연습생 핫클립 채점지</h2>
         <div class="btn-group">
-            <button class="btn-reset" onclick="forceReset()">⚠️ 강제 복구</button>
-            <button class="btn-add" onclick="addNextWeek()">+ 주차 추가</button>
+            <button class="btn-reset" onclick="forceReset()">전체 리셋</button>
+            <button class="btn-add" onclick="addNextWeek()">+ 새 주차 추가</button>
         </div>
     </div>
 
     <div class="tabs" id="tabGroup">
-        <div id="tab1" class="tab active" onclick="changeQuarter(1)">1분기 (1~3월)</div>
-        <div id="tab2" class="tab" onclick="changeQuarter(2)">2분기 (4~6월)</div>
-        <div id="tab3" class="tab" onclick="changeQuarter(3)">3분기 (7~9월)</div>
-        <div id="tab4" class="tab" onclick="changeQuarter(4)">4분기 (10~12월)</div>
+        <div id="tab1" class="tab active" onclick="changeQuarter(1)">1분기</div>
+        <div id="tab2" class="tab" onclick="changeQuarter(2)">2분기</div>
+        <div id="tab3" class="tab" onclick="changeQuarter(3)">3분기</div>
+        <div id="tab4" class="tab" onclick="changeQuarter(4)">4분기</div>
     </div>
 
     <div class="table-wrapper">
@@ -53,7 +89,7 @@
             <thead>
                 <tr id="headerRow">
                     <th class="name-col">닉네임</th>
-                    <th class="count-col">제출 수</th>
+                    <th class="count-col">제출</th>
                 </tr>
             </thead>
             <tbody id="tableBody"></tbody>
@@ -88,7 +124,7 @@
     const nameList = Object.keys(initialFullData);
 
     function forceReset() {
-        if(confirm("모든 데이터를 초기화하고 19명 명단으로 세팅할까요?")) {
+        if(confirm("모든 데이터를 초기화하시겠습니까?")) {
             db.ref('traineeData').set(initialFullData).then(() => {
                 currentQuarter = 1;
                 updateTabUI();
@@ -110,22 +146,15 @@
         });
     }
 
-    // 핵심: 연도/월/주차 계산기
     function getWeekInfo(index) {
         const startYear = 2026;
-        const startMonth = 2; // 2월 시작
-        
-        const totalWeeksFromStart = index; 
-        const totalMonthsPassed = Math.floor(totalWeeksFromStart / 4);
-        
-        // 전체 월 수 (시작월 + 경과월)
+        const startMonth = 2; 
+        const totalMonthsPassed = Math.floor(index / 4);
         const absoluteMonths = (startMonth - 1) + totalMonthsPassed;
-        
         const year = startYear + Math.floor(absoluteMonths / 12);
         const month = (absoluteMonths % 12) + 1;
         const weekNum = (index % 4) + 1;
         const quarter = Math.ceil(month / 3);
-        
         return { year, month, weekNum, quarter };
     }
 
@@ -141,7 +170,7 @@
         const firstPerson = Object.keys(data)[0];
         const allScores = data[firstPerson] || [];
 
-        header.innerHTML = '<th class="name-col">닉네임</th><th class="count-col">제출 수</th>';
+        header.innerHTML = '<th class="name-col">닉네임</th><th class="count-col">제출</th>';
         const visibleIndices = [];
         
         allScores.forEach((_, idx) => {
@@ -150,9 +179,8 @@
                 visibleIndices.push(idx);
                 const th = document.createElement('th');
                 th.className = 'week-col';
-                // 1주차일 때만 연도 표시 (깔끔하게)
                 const yearLabel = (info.month === 1 && info.weekNum === 1) ? `${info.year}년 ` : "";
-                th.innerText = `${yearLabel}${info.month}월 ${info.weekNum}주차`;
+                th.innerText = `${yearLabel}${info.month}월 ${info.weekNum}주`;
                 header.appendChild(th);
             }
         });
@@ -164,7 +192,7 @@
             const submitCount = scores.filter(s => s && s !== "" && !s.includes("미제출")).length;
             
             let cells = `<td class="name-col">${name}</td>`;
-            cells += `<td class="count-col">${submitCount}개</td>`;
+            cells += `<td class="count-col">${submitCount}</td>`;
             
             visibleIndices.forEach(idx => {
                 const score = scores[idx] || "";
@@ -177,9 +205,9 @@
 
     function applyStyle(val) {
         const v = val.toUpperCase();
-        if (v.includes("PASS") && v.includes("FAIL")) return 'style="color: #FF82AB; font-weight:bold;"';
-        if (v.includes("PASS")) return 'style="color:#2ecc71; font-weight:bold;"';
-        if (v.includes("FAIL")) return 'style="color:#e74c3c; font-weight:bold;"';
+        if (v.includes("PASS") && v.includes("FAIL")) return 'style="color: #FF82AB; font-weight:800;"';
+        if (v.includes("PASS")) return 'style="color:#2ecc71; font-weight:800;"';
+        if (v.includes("FAIL")) return 'style="color:#e74c3c; font-weight:800;"';
         if (v.includes("미제출")) return 'style="color:#adb5bd;"';
         return 'style="color:#1c1e21;"';
     }
@@ -197,15 +225,12 @@
                 data[name].push("");
                 newIdx = data[name].length - 1;
             });
-
             const newInfo = getWeekInfo(newIdx);
-            
             db.ref('traineeData').set(data).then(() => {
-                // 주차 추가 시 해당 분기로 탭과 화면을 강제 전환
                 if (currentQuarter !== newInfo.quarter) {
                     currentQuarter = newInfo.quarter;
                     updateTabUI();
-                    renderTable(data); // 화면 즉시 갱신
+                    renderTable(data);
                 }
             });
         });
